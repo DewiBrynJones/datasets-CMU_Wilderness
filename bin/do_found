@@ -82,6 +82,7 @@
 ##    build a synthesis voice and resynthesize data to assign confidence ##
 ##                                                                       ##
 ###########################################################################
+set -e
 
 FFMPEG=avconc
 FFMPEG=ffmpeg
@@ -327,7 +328,7 @@ then
     #  get API key from https://dbp4.org and export it as BIBLEIS_API_KEY
     #  $2=http://live.bible.is/CEBRPV/Matt/1/D
     languageid=`echo $2 | sed 's/^.*bible.is.//;s+/.*$++'`
-    api_index="https://api.dbp4.org/bibles/$languageid?v=4&key=$BIBLEIS_API_KEY"
+    api_index="https://api.v4.dbt.io/bibles/$languageid?v=4&key=$BIBLEIS_API_KEY"
 
     if [ ! -d download ]
     then
@@ -336,13 +337,13 @@ then
     fi
     echo $2 >download/starturl
     echo $languageid > download/languageid
-    wget -O books.json $api_index
+    wget -O books.json $api_index || exit 1
 
     grep -o 'language":"[^"]*' books.json | cut -d'"' -f3 > download/languagename
 
     fieldsetid=`grep -o 'dbp-prod":\[{"id":"[^"]*' books.json | cut -d'"' -f5`
-    api_audio="https://api.dbp4.org/bibles/filesets/$fieldsetid?v=4&key=$BIBLEIS_API_KEY&type=audio"
-    wget -O audio.json $api_audio
+    api_audio="https://api.v4.dbt.io/bibles/filesets/$fieldsetid?v=4&key=$BIBLEIS_API_KEY&type=audio"
+    wget -O audio.json $api_audio || exit 1
 
     sed -i 's/},{/},\n{/g' audio.json
     sed -i 's/{"data"\:[//g' audio.json
@@ -355,7 +356,7 @@ then
       echo $fname >>download/flist
       wget -O download/mp3/$fname.mp3 $mp3
 
-      api_text="https://api.dbp4.org/bibles/filesets/$languageid/$bookid/$chapterid?v=4&key=$BIBLEIS_API_KEY&type=text"
+      api_text="https://api.v4.dbt.io/bibles/filesets/$languageid/$bookid/$chapterid?v=4&key=$BIBLEIS_API_KEY&type=text"
       wget -O $fname.json $api_text
       grep -o 'verse_text":"[^"]*' $fname.json | cut -d'"' -f3 > download/txt/$fname.txt
       rm $fname.json
